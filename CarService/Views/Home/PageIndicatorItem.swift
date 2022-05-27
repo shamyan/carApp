@@ -1,5 +1,5 @@
 //
-//  PageIndicator.swift
+//  PageIndicatorItem.swift
 //  CarService
 //
 //  Created by Harutyun Shamyan on 25.05.22.
@@ -18,7 +18,7 @@ struct PageIndicatorItem: View {
                 .frame(width: 40, height: 2)
                 .padding(.horizontal, 20)
         }
-        .frame(width: 40, height: 30)
+        .frame(width: 40, height: 20)
         .onTapGesture {
             withAnimation(.spring()) {
                 selected = page
@@ -27,7 +27,7 @@ struct PageIndicatorItem: View {
     }
 }
 
-struct PageIndicator_Previews: PreviewProvider {
+struct PageIndicatorItem_Previews: PreviewProvider {
     static var previews: some View {
         PageIndicatorItem(selected: .constant(0), page: 0)
     }

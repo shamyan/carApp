@@ -8,12 +8,6 @@
 import SwiftUI
 
 struct EngineView: View {
-    @StateObject private var viewModel: ViewModel
-
-    init(viewModel: ViewModel = .init()) {
-        _viewModel = StateObject(wrappedValue: viewModel)
-    }
-
     var body: some View {
         VStack(alignment: .leading) {
             Text("Engine")
@@ -21,24 +15,25 @@ struct EngineView: View {
                 .font(.system(size: 15, weight: .bold))
                 .foregroundColor(.black)
                 .frame(height: 10)
-
-            HStack(spacing: 10) {
-                LoadableButton(state: .idle) {
-                    viewModel.startEngine()
+            HStack {
+                ButtonWithLoader(state: .constant(.idle)) {
+                    print("start engine")
                 } label: {
                     Text("START")
                         .font(.system(size: 10, weight: .bold))
                         .foregroundColor(.white)
                 }
-                LoadableButton(state: .idle) {
-                    viewModel.stopEngine()
+                .padding(.vertical, 10)
+                .padding(.leading, 10)
+                ButtonWithLoader(state: .constant(.idle)) {
+                    print("stop engine")
                 } label: {
                     Text("STOP")
                         .font(.system(size: 10, weight: .bold))
                         .foregroundColor(.white)
                 }
+                .padding(.trailing, 10)
             }
-            .frame(width: 150, height: 80)
             .background(Color.white)
             .cornerRadius(4)
         }

@@ -9,13 +9,8 @@ import SwiftUI
 
 struct DoorsView: View {
 
-    @EnvironmentObject private var viewModel: ViewModel
-
-    private let car: Car
-
-    init(car: Car) {
-        self.car = car
-    }
+    @Binding var carModelName: String
+    @StateObject var viewModel: ViewModel
 
     var body: some View {
         VStack(alignment: .leading) {
@@ -25,26 +20,28 @@ struct DoorsView: View {
                     .foregroundColor(.black)
                     .bold()
                 Divider()
-                    .frame(width: 5, height: 10)
+                    .frame(width: 1)
                 Text(viewModel.statusText)
-                    .font(.system(size: 13, weight: .bold))
+                    .font(.system(size: 13,
+                                weight: .bold))
                     .foregroundColor(.gray)
             }
             .frame(height: 10)
-
             HStack(spacing: 10) {
-                LoadableButton(state: viewModel.lockButtonState) {
-                    viewModel.tryToLockDoors(for: car)
+                ButtonWithLoader(state: $viewModel.lockButtonState) {
+                    viewModel.tryToLockDoors(carModelName)
                 } label: {
                     Image("icn-lock", bundle: nil)
                 }
-                LoadableButton(state: viewModel.unlockButtonState) {
-                    viewModel.tryToUnlockDoors(for: car)
+                .padding(.vertical, 10)
+                .padding(.leading, 10)
+                ButtonWithLoader(state: $viewModel.unlockButtonState) {
+                    viewModel.tryToUnlockDoors(carModelName)
                 } label: {
                     Image("icn-unlock", bundle: nil)
                 }
+                .padding(.trailing, 10)
             }
-            .frame(width: 150, height: 80)
             .background(Color.white)
             .cornerRadius(4)
         }
@@ -53,7 +50,7 @@ struct DoorsView: View {
             Alert(title: Text(item.title),
                 message: Text(item.message),
           primaryButton: .destructive(Text(item.destructiveTitle)) {
-                viewModel.fireDoors(action: item.action)
+                item.applyAction?()
             },
         secondaryButton: .cancel())
         })
@@ -62,7 +59,9 @@ struct DoorsView: View {
 
 struct DoorsView_Previews: PreviewProvider {
     static var previews: some View {
-        DoorsView(car: .qx55)
-            .environmentObject(DoorsView.ViewModel())
+        DoorsView(carModelName: .constant(""),
+                     viewModel: DoorsView.ViewModel(lock: { completion in },
+                                                  unlock: { completion in }))
+            .previewInterfaceOrientation(.portrait)
     }
 }

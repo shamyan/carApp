@@ -9,7 +9,14 @@ import SwiftUI
 
 struct VehicleView: View {
     var body: some View {
-        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
+        ZStack {
+            Config.SwiftUI.Colors.background
+
+            Text("Vehicle")
+                .font(.system(size: 30,
+                            weight: .bold,
+                            design: .rounded))
+        }
     }
 }
 

@@ -1,88 +1,132 @@
 //
-//  ViewModel.swift
+//  HomeViewModel.swift
 //  CarService
 //
 //  Created by Harutyun Shamyan on 23.05.22.
 //
 
 import Foundation
+import UIKit.UIImage
 
-final class HomeViewModel: ObservableObject {
+extension HomeView {
+    final class ViewModel: ObservableObject {
 
-    // MARK: Properties
+        // MARK: Properties
 
-    @Published var alertItem: LockAlertItem?
-    @Published var car = CarFactory.shared.qx55
-    @Published var lockStatusText: String = ""
-    @Published var miles: Int = 120
+        private let dataService: DataService
+        private let controlService: ControlService
 
-    @Published var lockButtonState: LoadableButtonState = .idle
-    @Published var unlockButtonState: LoadableButtonState = .idle
+        @Published var refreshStatusText: String = ""
+        @Published var carModelTitle: String = ""
+        @Published var milesTitle: String = ""
 
-    func showLockAlertIfNeeded() {
-        if lockButtonState == .loaded {
-            return
+        @Published var image: UIImage = UIImage()
+        @Published var car: Car = DataSet.none
+        @Published var alertItem: AlertItem?
+
+        // MARK: Initializer
+
+        init(dataService: DataService = CarDataService(), controlService: ControlService = CarControlService()) {
+            self.dataService = dataService
+            self.controlService = controlService
         }
-        let message = "Please confirm that you want to lock the doors of \(car.model)"
-        alertItem = LockAlertItem(title: "Are you sure?",
-                                message: message,
-                       destructiveTitle: "Yes, Lock",
-                                 action: .lock)
-    }
 
-    func showUnlockAlertIfNeeded() {
-        if unlockButtonState == .loaded {
-            return
+        // MARK: Public functions
+
+        func fetchData() {
+            updateRefreshStatusText()
+            dataService.getCar { [weak self] result in
+                guard let self = self else { return }
+                switch result {
+                case .success(let car):
+                    self.car = car
+                    self.updateCarModelTitle()
+                    self.getImage(of: car)
+                    self.getMiles(of: car)
+                case .failure(let error):
+                    self.handleServiceError(error)
+                }
+            }
         }
-        let message = "Please confirm that you want to unlock the doors of \(car.model)"
-        alertItem = LockAlertItem(title: "Are you sure?",
-                                message: message,
-                       destructiveTitle: "Yes, Unlock",
-                                 action: .unlock)
-    }
 
-    func lockUnlockDoors(with action: LockAlertAction) {
-        switch action {
-        case .lock:
-            lockDoors()
-        case .unlock:
-            unlockDoors()
-        default:
-            break
+        func getImage(of car: Car) {
+            dataService.getImage(of: car) { [weak self] result in
+                guard let self = self else { return }
+                switch result {
+                case .success(let image):
+                    self.image = image
+                case .failure(let error):
+                    self.handleServiceError(error)
+                }
+            }
         }
-    }
 
-    func startEngine() {
-        print("start engine...")
-    }
-
-    func stopEngine() {
-        print("stop engine...")
-    }
-
-    // MARK: Private functions
-
-    private func lockDoors() {
-        print("lock doors...")
-        lockStatusText = "..."
-        lockButtonState = .loading
-        unlockButtonState = .idle
-        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
-            print("doors locked")
-            self.lockStatusText = "Locked"
-            self.lockButtonState = .loaded
+        func getMiles(of car: Car) {
+            dataService.getMiles(of: car) { [weak self] result in
+                guard let self = self else { return }
+                switch result {
+                case .success(let miles):
+                    self.milesTitle = "\(miles)mi"
+                case .failure(let error):
+                    self.handleServiceError(error)
+                }
+            }
         }
-    }
 
-    private func unlockDoors() {
-        print("unlock doors...")
-        lockStatusText = "..."
-        unlockButtonState = .loading
-        lockButtonState = .idle
-        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
-            print("doors unlocked")
-            self.lockStatusText = "Unlocked"
-            self.unlockButtonState = .loaded
+        func lockDoors(_ completion: ((Bool) -> Void)?) {
+            controlService.lockDoors { [weak self] error in
+                guard let self = self else {
+                    completion?(false)
+                    return
+                }
+                if let error = error {
+                    self.handleServiceError(error)
+                    completion?(false)
+                    return
+                }
+                completion?(true)
+            }
         }
+
+        func unlockDoors(_ completion: ((Bool) -> Void)?) {
+            controlService.unlockDoors { [weak self] error in
+                guard let self = self else {
+                    completion?(false)
+                    return
+                }
+                if let error = error {
+                    self.handleServiceError(error)
+                    completion?(false)
+                    return
+                }
+                completion?(true)
+            }
+        }
+
+        func startEngine() {
+            print("start engine")
+        }
+
+        func stopEngine() {
+            print("stop engine")
+        }
+
+        func updateRefreshStatusText() {
+            refreshStatusText = "Updated 1min ago"
+        }
+
+        func updateCarModelTitle() {
+            carModelTitle = "My \(car.model)"
+        }
+
+        // MARK: Private functions
+
+        private func handleServiceError(_ error: ServiceError) {
+            alertItem = AlertItem(title: "Error!",
+                                message: error.message,
+                       destructiveTitle: "OK",
+                            applyAction: {})
+        }
+
     }
 }

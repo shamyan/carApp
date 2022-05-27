@@ -1,5 +1,5 @@
 //
-//  LockAlertItem.swift
+//  AlertItem.swift
 //  CarService
 //
 //  Created by Harutyun Shamyan on 23.05.22.

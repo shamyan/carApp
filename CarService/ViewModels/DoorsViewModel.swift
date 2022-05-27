@@ -7,73 +7,90 @@
 
 import Foundation
 
-final class DoorsViewModel: ObservableObject {
+extension DoorsView {
+    final class ViewModel: ObservableObject {
 
-    // MARK: Properties
+        typealias LockDoorsHandler = (_ completion: ((Bool) -> Void)?) -> Void
+        typealias UnlockDoorsHandler = (_ completion: ((Bool) -> Void)?) -> Void
 
-    @Published var lockButtonState: LoadableButtonState = .idle
-    @Published var unlockButtonState: LoadableButtonState = .idle
-    @Published var alertItem: LockAlertItem?
-    @Published var statusText: String = ""
+        // MARK: Properties
 
-    // MARK: Public functions
+        let lock: LockDoorsHandler
+        let unlock: UnlockDoorsHandler
 
-    func tryToLockDoors(_ car: Car) {
-        if lockButtonState == .loaded {
-            return
+        @Published var lockButtonState: ButtonWithLoaderState = .idle
+        @Published var unlockButtonState: ButtonWithLoaderState = .idle
+        @Published var alertItem: AlertItem?
+        @Published var statusText: String = ""
+
+        init(lock: @escaping LockDoorsHandler, unlock: @escaping UnlockDoorsHandler) {
+            self.lock = lock
+            self.unlock = unlock
         }
-        let message = "Please confirm that you want to lock the doors of \(car.model)"
-        alertItem = LockAlertItem(title: "Are you sure?",
-                                message: message,
+
+        func tryToLockDoors(_ carModelName: String) {
+            if lockButtonState == .loaded || unlockButtonState == .loading {
+                return
+            }
+            alertItem = AlertItem(title: "Are you sure?",
+                                message: "Please confirm that you want to lock the doors of \(carModelName)",
                        destructiveTitle: "Yes, Lock",
-                                 action: .lock)
-    }
+                            applyAction: { [weak self] in
 
-    func tryToUnlockDoors(_ car: Car) {
-        if unlockButtonState == .loaded {
-            return
+                guard let self = self else { return }
+
+                print("trying to lock the doors...")
+                let prevStatus = self.statusText
+                self.statusText = "..."
+                self.lockButtonState = .loading
+                self.lock({ success in
+                    DispatchQueue.main.async {
+                        if success {
+                            print("doors locked")
+                            self.statusText = "Locked"
+                            self.lockButtonState = .loaded
+                            self.unlockButtonState = .idle
+                        } else {
+                            print("can't lock the doors")
+                            self.statusText = prevStatus
+                            self.lockButtonState = .idle
+                        }
+                    }
+                })
+            })
         }
-        let message = "Please confirm that you want to unlock the doors of \(car.model)"
-        alertItem = LockAlertItem(title: "Are you sure?",
-                                message: message,
+
+        func tryToUnlockDoors(_ carModelName: String) {
+            if unlockButtonState == .loaded || lockButtonState == .loading {
+                return
+            }
+            alertItem = AlertItem(title: "Are you sure?",
+                                message: "Please confirm that you want to unlock the doors of \(carModelName)",
                        destructiveTitle: "Yes, Unlock",
-                                 action: .unlock)
-    }
+                            applyAction: { [weak self] in
 
-    func lock(with action: LockAlertAction) {
-        switch action {
-        case .lock:
-            lockDoors()
-        case .unlock:
-            unlockDoors()
-        default:
-            break
+                guard let self = self else { return }
+
+                print("trying to unlock the doors...")
+                let prevStatus = self.statusText
+                self.statusText = "..."
+                self.unlockButtonState = .loading
+                self.unlock({ success in
+                    DispatchQueue.main.async {
+                        if success {
+                            print("doors unlocked")
+                            self.statusText = "Unlocked"
+                            self.unlockButtonState = .loaded
+                            self.lockButtonState = .idle
+                        } else {
+                            print("can't unlock the doors")
+                            self.statusText = prevStatus
+                            self.unlockButtonState = .idle
+                        }
+                    }
+                })
+            })
         }
-    }
 
-    // MARK: Private functions
-
-    private func lockDoors() {
-        print("lock doors...")
-        statusText = "..."
-        lockButtonState = .loading
-        unlockButtonState = .idle
-        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
-            print("doors locked")
-            self.statusText = "Locked"
-            self.lockButtonState = .loaded
-        }
-    }
-
-    private func unlockDoors() {
-        print("unlock doors...")
-        statusText = "..."
-        unlockButtonState = .loading
-        lockButtonState = .idle
-        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
-            print("doors unlocked")
-            self.statusText = "Unlocked"
-            self.unlockButtonState = .loaded
-        }
     }
 }

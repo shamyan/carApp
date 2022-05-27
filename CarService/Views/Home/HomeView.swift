@@ -7,72 +7,96 @@
 
 import SwiftUI
 
-struct PageIndicator: View {
-
-    @Binding var selected: Int
-
-    var body: some View {
-        Rectangle()
-            .fill(Color.blue)
-            .frame(width: 100, height: 3)
-            .onTapGesture {
-                selected = 1
-            }
-    }
-}
-
 struct HomeView: View {
+
+    // MARK: Properties
+
+    private var doorsViewModel: DoorsView.ViewModel!
     @StateObject private var viewModel: ViewModel
+    @State private var selectedPage: Int = 0
+    private let pageCount: Int = 3
+
+    // MARK: Initializer
 
     init(viewModel: ViewModel = .init()) {
         _viewModel = StateObject(wrappedValue: viewModel)
+        doorsViewModel = .init(lock: viewModel.lockDoors,
+                             unlock: viewModel.unlockDoors)
     }
 
     var body: some View {
-        NavigationView {
-            ZStack {
-                Config.SwiftUI.Colors.background
+        GeometryReader { geo in
+            NavigationView {
+                ZStack {
+                    Config.SwiftUI.Colors.background
+                    ScrollView {
+                        VStack {
+                            HStack {
+                                Image("icn-refresh", bundle: nil)
+                                Text(viewModel.refreshStatusText)
+                                    .foregroundColor(.black)
+                            }
+                            .padding()
+                            TabView(selection: $selectedPage) {
+                                ForEach(0..<pageCount, id: \.self) { index in
+                                    PageView(image: $viewModel.image)
+                                        .tag(index)
+                                }
+                            }
+                            .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+                            .frame(height: max(geo.size.width, geo.size.height) * 0.25)
+                            PageIndicator(selectedPage: $selectedPage,
+                                             pageCount: pageCount)
+                            HStack(spacing: 10) {
+                                DoorsView(carModelName: $viewModel.carModelTitle,
+                                             viewModel: doorsViewModel)
 
-                VStack {
-                    PageItemView(image: "qx55")
-
-
-
-                    HStack(spacing: 20) {
-                        DoorsView(car: .qx55)
-                            .environmentObject(DoorsView.ViewModel())
-                        EngineView()
-                    }
-                    Spacer()
-                }
-            }
-            .navigationBarTitleDisplayMode(.inline)
-            .background(Color.white)
-            .toolbar {
-                ToolbarItem(placement: .principal) {
-                    HStack {
-                        Text("My \(viewModel.car.model)")
-                            .frame(width: 100)
-                            .foregroundColor(.black)
-                            .font(.headline)
-                        Divider()
-                            .frame(width: 2, height: 20)
-                            .background(Config.SwiftUI.Colors.main)
-                        Image("icn-gas", bundle: nil)
-                        Text("\(viewModel.car.miles)mi")
-                            .bold()
-                            .frame(width: 50)
-                            .foregroundColor(.black)
+                                EngineView()
+                            }
+                            .padding(.top, 20)
+                        }
                     }
                 }
+                .navigationBarTitleDisplayMode(.inline)
+                .background(Color.white)
+                .toolbar {
+                    ToolbarItem(placement: .principal) {
+                        HStack {
+                            Text(viewModel.carModelTitle)
+                                .foregroundColor(.black)
+                                .font(.headline)
+                            Divider()
+                                .frame(width: 1, height: 20)
+                                .background(Config.SwiftUI.Colors.main)
+                            HStack {
+                                Image("icn-gas", bundle: nil)
+                                Text(viewModel.milesTitle)
+                                    .bold()
+                                    .foregroundColor(.black)
+                            }
+                        }
+                        .frame(width: geo.size.width)
+                    }
+                }
             }
+            .onAppear(perform: viewModel.fetchData)
+
+            .alert(item: $viewModel.alertItem, content: { item in
+                Alert(title: Text(item.title),
+                    message: Text(item.message),
+              primaryButton: .destructive(Text(item.destructiveTitle)) {
+                    item.applyAction?()
+                },
+            secondaryButton: .cancel())
+            })
         }
-        .onAppear(perform: viewModel.getCar)
     }
 }
 
 struct HomeView_Previews: PreviewProvider {
     static var previews: some View {
         HomeView()
+            .previewDevice(PreviewDevice(rawValue: "iPhone 12 Pro Max"))
+            .previewInterfaceOrientation(.portraitUpsideDown)
     }
 }

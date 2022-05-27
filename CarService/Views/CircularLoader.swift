@@ -1,5 +1,5 @@
 //
-//  LoadingView.swift
+//  CircularLoader.swift
 //  CarService
 //
 //  Created by Harutyun Shamyan on 23.05.22.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct LoadingView: View {
+struct CircularLoader: View {
     @State private var isLoading = false
     private let color: Color
 
@@ -27,8 +27,8 @@ struct LoadingView: View {
     }
 }
 
-struct LoadingView_Previews: PreviewProvider {
+struct CircularLoader_Previews: PreviewProvider {
     static var previews: some View {
-        LoadingView(color: Config.SwiftUI.Colors.main)
+        CircularLoader(color: Config.SwiftUI.Colors.main)
     }
 }

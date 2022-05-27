@@ -1,5 +1,5 @@
 //
-//  LoadableButton.swift
+//  ButtonWithLoader.swift
 //  CarService
 //
 //  Created by Harutyun Shamyan on 24.05.22.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-enum LoadableButtonState {
+enum ButtonWithLoaderState {
     case idle
     case loading
     case loaded
@@ -23,15 +23,9 @@ enum LoadableButtonState {
 }
 
 struct ButtonWithLoader<Label> : View where Label : View {
-    private var state: LoadableButtonState
-    private let label: () -> Label
-    private let action: () -> Void
-
-    init(state: LoadableButtonState, action: @escaping () -> Void, label: @escaping () -> Label) {
-        self.state = state
-        self.action = action
-        self.label = label
-    }
+    @Binding var state: ButtonWithLoaderState
+    let action: () -> Void
+    let label: () -> Label
 
     var body: some View {
         if state == .loading {
@@ -50,12 +44,13 @@ struct ButtonWithLoader<Label> : View where Label : View {
     }
 }
 
-struct LoadableImageButton_Previews: PreviewProvider {
+struct ButtonWithLoader_Previews: PreviewProvider {
     static var previews: some View {
-        ButtonWithLoader(state: .idle) {
+        ButtonWithLoader(state: .constant(.idle)) {
             print("start loading")
         } label: {
             Image("icn-unlock", bundle: nil)
         }
+        .previewInterfaceOrientation(.portraitUpsideDown)
     }
 }
